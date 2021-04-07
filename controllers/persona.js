@@ -5,18 +5,13 @@ const persona = {
     const { value } = req.query;
     const persona = await Persona.find({
       $or: [
-        { tipoPersona: new RegExp(value, "i") },
         { nombre: new RegExp(value, "i") },
         { tipoDocumento: new RegExp(value, "i") },
-        { numDocumento: new RegExp(value, "i") },
-        { direccion: new RegExp(value, "i") },
-        { telefono: new RegExp(value, "i") },
-        { email: new RegExp(value, "i") },
       ],
     }).sort({ createdAt: -1 });
 
     res.json({
-        persona,
+      persona,
     });
   },
 
@@ -26,7 +21,7 @@ const persona = {
     await persona.save();
 
     res.json({
-        persona,
+      persona,
     });
   },
 
@@ -35,7 +30,7 @@ const persona = {
     const persona = await Persona.findOne({ _id: id });
 
     res.json({
-        persona,
+      persona,
     });
   },
 
@@ -45,7 +40,7 @@ const persona = {
     const persona = await Persona.findByIdAndUpdate(id, resto);
 
     res.json({
-        persona,
+      persona,
     });
   },
 
@@ -54,7 +49,7 @@ const persona = {
     const persona = await Persona.findOneAndUpdate(id, { estado: 1 });
 
     res.json({
-        persona,
+      persona,
     });
   },
 
@@ -63,7 +58,7 @@ const persona = {
     const persona = await Persona.findOneAndUpdate(id, { estado: 0 });
 
     res.json({
-        persona,
+      persona,
     });
   },
 
@@ -72,7 +67,7 @@ const persona = {
     const persona = await Persona.findByIdAndDelete(id);
 
     res.json({
-        persona,
+      persona,
     });
   },
 };

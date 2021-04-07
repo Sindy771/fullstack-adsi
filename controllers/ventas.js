@@ -1,66 +1,20 @@
 import Ventas from "../models/ventas.js"; 
+import modificarStock from "../db-helpers/modificarStock.js"
 
 const ventas = {
   ventasGet: async (req, res) => {
     const { value } = req.query;
-    const ventas = await Ventas.find({
+    const ventas = await Ventas
+    .find({
       $or: [
-        { usuario: new RegExp(value, "i") },
-        { persona: new RegExp(value, "i") },
         { tipoComprobante: new RegExp(value, "i") },
-        { serieComprobante: new RegExp(value, "i") },
         { numComprobante: new RegExp(value, "i") },
-        { impuestos: new RegExp(value, "i") },
-        { total: new RegExp(value, "i") },
-        { detalle: new RegExp(value, "i") },
-        { _id: new RegExp(value, "i") },
-        { articulo: new RegExp(value, "i") },
-        { cantidad: new RegExp(value, "i") },
-        { precio: new RegExp(value, "i") },
-        { descuento: new RegExp(value, "i") },
       ],
-    }).sort({ createdAt: -1 });
-
-    res.json({
-      ventas,
-    });
-  },
-
-  ventasPost: async (req, res) => {
-    const { 
-        usuario, 
-        persona, 
-        tipoComprobante, 
-        serieComprobante, 
-        numComprobante, 
-        impuestos, 
-        total, 
-        detalle, 
-        _id, 
-        articulo, 
-        cantidad, 
-        precio,
-        descuento,
-    }= req.body;
-    const ventas = new Ventas({ 
-        usuario, 
-        persona, 
-        tipoComprobante, 
-        serieComprobante, 
-        numComprobante, 
-        impuestos, 
-        total, 
-        detalle, 
-        _id, 
-        articulo, 
-        cantidad, 
-        precio,
-        descuento,
-    });
-    const salt=bcryptjs.genSaltSync();
-    ventas._id=bcryptjs.hashSync(_id, salt)
-    await ventas.save();
-
+    })
+    .sort({ createdAt: -1 })
+    .populate('usuarios', ['nombre', 'email'])
+    .populate('personas', ['nombre', 'tipoDocumento'])
+    
     res.json({
       ventas,
     });
@@ -68,7 +22,10 @@ const ventas = {
 
   ventasById: async (req, res) => {
     const { id } = req.params;
-    const ventas = await Ventas.findById(id);
+    const ventas = await Ventas
+      .findOne({ _id: id })
+      .populate("usuarios", ["nombre", "email"])
+      .populate("personas ", ["nombre", "tipoDocumento"]);
 
     res.json({
       ventas,
@@ -78,12 +35,6 @@ const ventas = {
   ventasPut: async (req, res) => {
     const { id } = req.params;
     const { _id, createdAt, __v, estado, ...resto } = req.body
-
-    if(_id){
-      const salt=bcryptjs.genSaltSync();
-      resto._id=bcryptjs.hashSync(_id, salt)
-    }
-
     const ventas = await Ventas.findByIdAndUpdate(id, resto);
 
     res.json({
@@ -91,19 +42,51 @@ const ventas = {
     });
   },
 
-  ventasActivar: async (req, res) => {
-    const { id } = req.params;
-    const ventas = await Ventas.findOneAndUpdate(id, { estado: 1 });
+  agregar: async (req, res) => {
+    const {
+      usuario,
+      persona,
+      tipoComprobante,
+      serieComprobante,
+      numComprobante,
+      impuesto,
+      total,
+      detalles,
+    } = req.body;
+    const ventas = new Ventas({
+      usuario,
+      persona,
+      tipoComprobante,
+      serieComprobante,
+      numComprobante,
+      impuesto,
+      total,
+      detalles,
+    });
+    ventas.total = ventas.detalles.reduce((acc, articulos) => acc + ((articulos.cantidad * articulos.precio) -
+    articulos.descuento), 0)
 
+    ventas.impuesto = ventas.total * 0.19
+
+    await ventas.save();
+    detalles.map((articulos) => modificarStock.disminuirStock(articulos._id, articulos.cantidad))
     res.json({
       ventas,
     });
   },
 
+  ventasActivar: async (req, res) => {
+    const { id } = req.params;
+    const ventas = await Ventas.findByIdAndUpdate(id, { state: 1 });
+    ventas.detalles.map((articulos) => modificarStock.disminuirStock(articulos._id,articulos.cantidad))
+    res.json({
+      ventas,
+    });
+  },
   ventasDesactivar: async (req, res) => {
     const { id } = req.params;
-    const ventas = await Ventas.findOneAndUpdate(id, { estado: 0 });
-
+    const ventas = await Ventas.findByIdAndUpdate(id, { state: 0 });
+    ventas.detalles.map((articulos) => modificarStock.aumentarStock(articulos._id,articulos.cantidad))
     res.json({
       ventas,
     });

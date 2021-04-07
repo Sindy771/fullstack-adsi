@@ -57,4 +57,3 @@ router.delete("/:id",[
 ],persona.personaDelete);
 
 export default router
-

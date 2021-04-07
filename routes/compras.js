@@ -1,6 +1,6 @@
 import  Router from "express"
 import compras from "../controllers/compras.js";
-import { existeComprasById, existeComprasByNombre } from "../db-helpers/compras.js"
+import { existeComprasById } from "../db-helpers/compras.js"
 import { validarCampos } from "../middlewares/validar-campos.js";
 import { validarJWT } from "../middlewares/validar-jwt.js";
 import validator from 'express-validator';
@@ -22,16 +22,14 @@ router.get("/:id",[
 
 router.post("/",[
     validarJWT,
-    check('nombre', 'El nombre es obligatorio').not().isEmpty(),
-    check('nombre').custom(existeComprasByNombre),
+    //check('nombre', 'El nombre es obligatorio').not().isEmpty(),
     validarCampos
-],compras.comprasPost);
+],compras.agregar);
 
 router.put("/:id",[
     validarJWT,
     check('id', 'No es un ID válido').isMongoId(),
     check('id').custom(existeComprasById),
-    check('nombre').custom(existeComprasByNombre),
     validarCampos
 ],compras.comprasPut);
 

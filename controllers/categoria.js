@@ -1,3 +1,4 @@
+
 import Categoria from "../models/categoria.js";
 
 const categoria = {
